@@ -1,0 +1,50 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <title>TicTacToe</title>
+    <link rel="stylesheet" href="index.css">
+    <meta name="alb-dns-name" content="ALB_DNS_NAME_PLACEHOLDER">
+</head>
+<body>
+    <body>
+        <div class="text-center" id="box">
+            <header>
+                <h1>Tic Tac Toe</h1>
+            </header>
+            <input id="login" placeholder="Place a login here">
+            <button onclick="createGame()">Create a new game</button>
+            <button onclick="connectToRandom()">Connect to random game</button>
+            <input id="game_id" placeholder="Paste game id">
+            <button onclick="connectToSpecificGame()">Connect by game id</button>
+            <ul id="gameBoard">
+                <li class="tic" id="0_0"></li>
+                <li class="tic" id="0_1"></li>
+                <li class="tic" id="0_2"></li>
+                <li class="tic" id="1_0"></li>
+                <li class="tic" id="1_1"></li>
+                <li class="tic" id="1_2"></li>
+                <li class="tic" id="2_0"></li>
+                <li class="tic" id="2_1"></li>
+                <li class="tic" id="2_2"></li>
+            </ul>
+            <div class="clearfix"></div>
+            <footer>
+                <div>
+                    <span>You are playing with<span id="oponentLogin"></span></span>
+                </div>
+                <div>
+                    <span>You play as<span id="playerTicToe"></span></span>
+                </div>
+            </footer>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/5.0.11/signalr.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="index.js"></script>
+    </body>
+</body>
+</html>

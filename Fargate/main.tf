@@ -71,6 +71,13 @@ resource "aws_security_group" "backend_sg" {
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     from_port = 0
@@ -95,6 +102,13 @@ resource "aws_security_group" "frontend_sg" {
     protocol = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
     from_port = 0
@@ -105,6 +119,110 @@ resource "aws_security_group" "frontend_sg" {
 
   tags = {
     Name = "frontend_sg"
+  }
+}
+
+resource "aws_security_group" "alb_sg" {
+  name = "alb_sg"
+  description = "Allow load balancer traffic"
+  vpc_id = aws_vpc.tictactoe_vpc.id
+
+  ingress {
+    from_port = 3000
+    to_port = 3000
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  ingress {
+    from_port = 8080
+    to_port = 8080
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  ingress {
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "frontend_sg"
+  }
+}
+
+#Load balancer
+resource "aws_alb" "main" {
+  name        = "tictactoe-alb"
+  subnets         = [aws_subnet.tictactoe_subnet1.id, aws_subnet.tictactoe_subnet2.id]
+  security_groups = [aws_security_group.alb_sg.id]
+}
+
+resource "aws_alb_target_group" "alb-target-gr-back" {
+  name        = "alb-target-gr-back"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.tictactoe_vpc.id
+  target_type = "ip"
+
+  health_check {
+    healthy_threshold   = "3"
+    interval            = "30"
+    protocol            = "HTTP"
+    matcher             = "200"
+    timeout             = "3"
+    path                = "/"
+    unhealthy_threshold = "2"
+  }
+}
+
+resource "aws_alb_target_group" "alb-target-gr-front" {
+  name        = "falb-target-gr-front"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.tictactoe_vpc.id
+  target_type = "ip"
+
+  health_check {
+    healthy_threshold   = "3"
+    interval            = "30"
+    protocol            = "HTTP"
+    matcher             = "200"
+    timeout             = "3"
+    path                = "/"
+    unhealthy_threshold = "2"
+  }
+}
+
+# Redirect all traffic from the ALB to the target group
+resource "aws_alb_listener" "alb_listener_backend" {
+  load_balancer_arn = aws_alb.main.id
+  port              = 8080
+  protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = aws_alb_target_group.alb-target-gr-back.id
+    type             = "forward"
+  }
+}
+
+resource "aws_alb_listener" "alb_listener_frontend" {
+  load_balancer_arn = aws_alb.main.id
+  port              = 3000
+  protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = aws_alb_target_group.alb-target-gr-front.id
+    type             = "forward"
   }
 }
 
@@ -124,13 +242,19 @@ resource "aws_ecs_task_definition" "tictactoe_backend_task" {
   container_definitions = jsonencode([
     {
       name        = "backend"
-      image       = "851725643716.dkr.ecr.us-east-1.amazonaws.com/tictactoe_back:latest"
+      image       = "851725643716.dkr.ecr.us-east-1.amazonaws.com/tictactoe_back:fargate"
       essential   = true
       portMappings = [
         {
           containerPort = 8080
           hostPort      = 8080
           protocol      = "tcp"
+        }
+      ]
+      environment = [
+        {
+          name  = "ALB_DNS_NAME"
+          value = "${aws_alb.main.dns_name}"
         }
       ]
     }
@@ -150,13 +274,19 @@ resource "aws_ecs_task_definition" "tictactoe_frontend_task" {
   container_definitions = jsonencode([
     {
       name        = "frontend"
-      image       = "851725643716.dkr.ecr.us-east-1.amazonaws.com/tictactoe_front:latest"
+      image       = "851725643716.dkr.ecr.us-east-1.amazonaws.com/tictactoe_front:fargate"
       essential   = true
       portMappings = [
         {
           containerPort = 3000
           hostPort      = 3000
           protocol      = "tcp"
+        }
+      ]
+      environment = [
+        {
+          name  = "BACKEND_ADDRESS"
+          value = "${aws_alb.main.dns_name}"
         }
       ]
     }
@@ -177,8 +307,14 @@ resource "aws_ecs_service" "tictactoe_backend_service" {
     security_groups  = [aws_security_group.backend_sg.id]
     assign_public_ip = true
   }
+  
+  load_balancer {
+    target_group_arn = aws_alb_target_group.alb-target-gr-back.id
+    container_name   = "backend"
+    container_port   = 8080
+  }
 
-  depends_on = [aws_ecs_task_definition.tictactoe_backend_task]
+  depends_on = [aws_ecs_task_definition.tictactoe_backend_task, aws_alb_listener.alb_listener_backend]
 }
 
 resource "aws_ecs_service" "tictactoe_frontend_service" {
@@ -193,6 +329,22 @@ resource "aws_ecs_service" "tictactoe_frontend_service" {
     security_groups  = [aws_security_group.frontend_sg.id]
     assign_public_ip = true
   }
+  
+  load_balancer {
+    target_group_arn = aws_alb_target_group.alb-target-gr-front.id
+    container_name   = "frontend"
+    container_port   = 3000
+  }
 
-  depends_on = [aws_ecs_task_definition.tictactoe_frontend_task]
+  depends_on = [aws_ecs_task_definition.tictactoe_frontend_task, aws_alb_listener.alb_listener_frontend]
+}
+
+
+#output
+output "alb_backend" {
+  value = "http://${aws_alb.main.dns_name}:8080"
+}
+
+output "alb_frontend" {
+  value = "http://${aws_alb.main.dns_name}:3000"
 }
