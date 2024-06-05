@@ -113,7 +113,7 @@
 
 Screenshots of configured AWS services. Screenshots of your application running.
 
-![Sample image](img/sample-image.png)
+![Sample image](img/gameplay.jpg)
 
 ## Reflections
 
