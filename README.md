@@ -120,8 +120,12 @@ Screenshots of configured AWS services. Screenshots of your application running.
 - What did you learn?
   - how to define app architecture using fargate and ebs
 - What obstacles did you overcome?
-  - passing backend address to frontend
+  - passing backend address to frontend.
+    - EBS: static address
+    - Fargate: added load balancer, which determined the dns name. Later the name is passed to both backend and frontend using environment variables.
   - browser caching frontend code
+    - clearing browser cache
+    - rebulding docker images 
 - What did you help most in overcoming obstacles?
   - peers advice
   - consultation with the teacher
