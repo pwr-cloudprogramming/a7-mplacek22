@@ -2,7 +2,7 @@
 
 - Course: Cloud programming
 - Group: monday 9:15
-- Date: 
+- Date: 19.05.2024
 
 ## Environment architecture
 
@@ -111,9 +111,33 @@
 
 ## Preview
 
-Screenshots of configured AWS services. Screenshots of your application running.
-
+### Screenshots of application running.
+- Gameplay
 ![Sample image](img/gameplay.jpg)
+
+### Screenshots of configured AWS services.
+#### Fargate
+- VPC 
+![VPC](img/fargate/vpc_map.jpg)
+- Elastic Container Service -> Cluster
+![Cluster](img/fargate/cluster.jpg)
+- Backend service
+![Backend service](img/fargate/backend_service.jpg)
+- Backend task
+![Backend taks](img/fargate/backend_task.jpg)
+- Frontend service
+![Frontend service](img/fargate/frontend_service.jpg)
+- Frontend task
+![Frontend taks](img/fargate/frontend_task.jpg)
+- Load balancer
+![Load balancer](img/fargate/load_balancer.jpg)
+- Load balancer listeners
+![Load balancer](img/fargate/load_balancer_listeners.jpg)
+#### Elastic Beanstalk
+- Applications
+![app](img/ebs/application.jpg)
+- S3 Bucket
+![bucket](img/ebs/bucket.jpg)
 
 ## Reflections
 
